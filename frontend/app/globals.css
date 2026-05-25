@@ -53,6 +53,15 @@ body::before {
   z-index: 1;
 }
 
+.emergency-flash {
+  position: fixed;
+  inset: 0;
+  background: rgba(180, 35, 24, 0.25);
+  animation: emergencyFlash 0.9s ease-out 1;
+  pointer-events: none;
+  z-index: 3;
+}
+
 .shell {
   width: min(1200px, 100%);
   margin: 0 auto;
@@ -326,6 +335,13 @@ textarea {
   gap: 12px;
 }
 
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -337,6 +353,40 @@ textarea {
   letter-spacing: 0.12em;
   border: 1px solid transparent;
   white-space: nowrap;
+}
+
+.badge--pulse {
+  animation: badgePulse 2.2s ease-in-out infinite;
+}
+
+.badge--urgent {
+  animation: urgentPulse 1.1s ease-in-out infinite;
+  box-shadow: 0 0 0 rgba(180, 35, 24, 0.4);
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.secondary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.button-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .badge--emergency {
@@ -404,6 +454,37 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.report-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.report-section {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.report-section h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.report-text {
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+
+.report-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
 }
 
 .text-block {
@@ -477,6 +558,45 @@ textarea {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes badgePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes urgentPulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes emergencyFlash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
   }
 }
 

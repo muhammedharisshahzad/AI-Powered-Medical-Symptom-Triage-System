@@ -49,7 +49,7 @@ class MedicalOrchestrator:
     def _synthesize(self, user_input: str, outputs: list[AgentOutput]) -> tuple[Verdict, str]:
         system_prompt = (
             "You are a medical triage orchestrator. "
-            "Return a final verdict and concise report."
+            "Return a final verdict and a clear, professional report for patients."
         )
         agent_summaries = "\n\n".join(
             f"[{o.name} | {o.pattern}]\n{o.content}" for o in outputs
@@ -57,7 +57,13 @@ class MedicalOrchestrator:
         user_prompt = (
             "Based on the user symptoms and the agent outputs, "
             "return JSON with keys: verdict and final_report.\n"
-            "verdict must be one of: Emergency, See Doctor, Home Care.\n\n"
+            "verdict must be one of: Emergency, See Doctor, Home Care.\n"
+            "final_report must be human-friendly text (not JSON) using sections:\n"
+            "Summary:\n- <short paragraph>\n\n"
+            "Why this verdict:\n- <bullets>\n\n"
+            "Care guidance:\n- <bullets>\n\n"
+            "When to seek urgent care:\n- <bullets>\n\n"
+            "Disclaimer:\n- <1 line>\n\n"
             f"User symptoms:\n{user_input}\n\n"
             f"Agent outputs:\n{agent_summaries}"
         )

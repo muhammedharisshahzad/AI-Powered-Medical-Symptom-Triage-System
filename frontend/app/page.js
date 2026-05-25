@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FiActivity,
   FiAlertTriangle,
   FiCheckCircle,
   FiClipboard,
+  FiDownload,
   FiSearch,
   FiShield
 } from "react-icons/fi";
+import { jsPDF } from "jspdf";
 
 import { submitTriage } from "../lib/api";
 
@@ -36,8 +38,96 @@ const agentIcons = {
   "Care Recommender": FiClipboard
 };
 
+const reportHeadings = [
+  "Summary",
+  "Why this verdict",
+  "Care guidance",
+  "When to seek urgent care",
+  "Disclaimer"
+];
+
 function getAgentIcon(name) {
   return agentIcons[name] || FiClipboard;
+}
+
+function parseReport(text) {
+  if (!text) {
+    return [];
+  }
+
+  const lines = text.split(/\r?\n/).map((line) => line.trim());
+  const sections = [];
+  let current = null;
+
+  lines.forEach((line) => {
+    if (!line) {
+      return;
+    }
+
+    const match = reportHeadings.find((heading) =>
+      line.toLowerCase().startsWith(`${heading.toLowerCase()}:`)
+    );
+
+    if (match) {
+      current = { title: match, lines: [] };
+      const remainder = line.slice(match.length + 1).trim();
+      if (remainder) {
+        current.lines.push(remainder);
+      }
+      sections.push(current);
+      return;
+    }
+
+    if (!current) {
+      current = { title: "Report", lines: [] };
+      sections.push(current);
+    }
+
+    current.lines.push(line);
+  });
+
+  return sections;
+}
+
+function playEmergencySiren() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) {
+      return;
+    }
+    const context = new AudioContext();
+    const oscillator = context.createOscillator();
+    const gainNode = context.createGain();
+
+    oscillator.type = "sine";
+    oscillator.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    const now = context.currentTime;
+    const pattern = [
+      { time: 0, freq: 880 },
+      { time: 0.3, freq: 640 },
+      { time: 0.6, freq: 880 }
+    ];
+
+    // Web Audio beep pattern for an emergency siren cue.
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.18, now + 0.05);
+
+    pattern.forEach((step) => {
+      oscillator.frequency.setValueAtTime(step.freq, now + step.time);
+    });
+
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
+    oscillator.start(now);
+    oscillator.stop(now + 1.2);
+
+    oscillator.onended = () => {
+      context.close();
+    };
+  } catch (error) {
+    // Ignore audio errors (autoplay restrictions or missing support).
+  }
 }
 
 export default function HomePage() {
@@ -48,6 +138,7 @@ export default function HomePage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [flashEmergency, setFlashEmergency] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -71,11 +162,97 @@ export default function HomePage() {
     }
   };
 
+  const handleDownload = () => {
+    if (!result) {
+      return;
+    }
+
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 48;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const lineHeight = 16;
+    let cursorY = margin;
+
+    const ensureSpace = (needed = lineHeight) => {
+      if (cursorY + needed > pageHeight - margin) {
+        doc.addPage();
+        cursorY = margin;
+      }
+    };
+
+    const writeLines = (lines) => {
+      lines.forEach((line) => {
+        ensureSpace();
+        doc.text(line, margin, cursorY);
+        cursorY += lineHeight;
+      });
+    };
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    writeLines(["Medical Symptom Triage Report"]);
+    cursorY += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    writeLines([`Generated: ${new Date().toLocaleString()}`]);
+    cursorY += 12;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    writeLines(["Verdict"]);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    writeLines([result.verdict]);
+    cursorY += 12;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    writeLines(["Final Report"]);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    writeLines(doc.splitTextToSize(result.final_report, pageWidth - margin * 2));
+    cursorY += 12;
+
+    const agentText = result.agents
+      .map(
+        (agent) =>
+          `${agent.name} (${agent.pattern})\n${agent.content}`
+      )
+      .join("\n\n");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    writeLines(["Specialist Outputs"]);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    writeLines(doc.splitTextToSize(agentText, pageWidth - margin * 2));
+
+    doc.save("triage-report.pdf");
+  };
+
   const verdictInfo = result ? verdictConfig[result.verdict] : null;
   const VerdictIcon = verdictInfo ? verdictInfo.icon : null;
+  const reportSections = result ? parseReport(result.final_report) : [];
+
+  useEffect(() => {
+    if (!result || result.verdict !== "Emergency") {
+      return;
+    }
+
+    setFlashEmergency(true);
+    playEmergencySiren();
+
+    const timeout = setTimeout(() => setFlashEmergency(false), 1200);
+    return () => clearTimeout(timeout);
+  }, [result]);
 
   return (
     <>
+      {flashEmergency ? (
+        <div className="emergency-flash" aria-hidden="true" />
+      ) : null}
       <header className="header">
         <div className="brand">
           <img className="brand-logo" src="/api/logo" alt="Project logo" />
@@ -212,12 +389,28 @@ export default function HomePage() {
               <h2>Triaged outcome</h2>
               <p className="muted">Final verdict plus specialist reasoning.</p>
             </div>
-            {verdictInfo && VerdictIcon ? (
-              <span className={verdictInfo.className}>
-                <VerdictIcon className="icon" />
-                {verdictInfo.label}
-              </span>
-            ) : null}
+            <div className="result-actions">
+              {verdictInfo && VerdictIcon ? (
+                <span
+                  className={`${verdictInfo.className} badge--pulse ${
+                    result?.verdict === "Emergency" ? "badge--urgent" : ""
+                  }`}
+                >
+                  <VerdictIcon className="icon" />
+                  {verdictInfo.label}
+                </span>
+              ) : null}
+              {result ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleDownload}
+                >
+                  <FiDownload className="button-icon" />
+                  Download PDF
+                </button>
+              ) : null}
+            </div>
           </div>
 
           {error ? <div className="alert">{error}</div> : null}
@@ -245,7 +438,38 @@ export default function HomePage() {
             <div className="result-body">
               <div className="final-report">
                 <h3>Final report</h3>
-                <div className="text-block">{result.final_report}</div>
+                {reportSections.length ? (
+                  <div className="report-stack">
+                    {reportSections.map((section, index) => {
+                      const textLines = section.lines.filter(
+                        (line) => !line.startsWith("-")
+                      );
+                      const bullets = section.lines
+                        .filter((line) => line.startsWith("-"))
+                        .map((line) => line.replace(/^[-]\s?/, ""));
+
+                      return (
+                        <div className="report-section" key={`${section.title}-${index}`}>
+                          <h4>{section.title}</h4>
+                          {textLines.map((line, lineIndex) => (
+                            <p className="report-text" key={`${section.title}-t-${lineIndex}`}>
+                              {line}
+                            </p>
+                          ))}
+                          {bullets.length ? (
+                            <ul className="report-list">
+                              {bullets.map((item, itemIndex) => (
+                                <li key={`${section.title}-b-${itemIndex}`}>{item}</li>
+                              ))}
+                            </ul>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-block">{result.final_report}</div>
+                )}
               </div>
 
               <div className="agent-section">
