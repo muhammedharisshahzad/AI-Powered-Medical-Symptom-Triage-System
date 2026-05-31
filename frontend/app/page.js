@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import {
   FiActivity,
   FiAlertTriangle,
+  FiArrowRight,
   FiCheckCircle,
   FiClipboard,
+  FiCpu,
   FiDownload,
+  FiLock,
   FiSearch,
   FiShield
 } from "react-icons/fi";
@@ -139,6 +142,17 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [flashEmergency, setFlashEmergency] = useState(false);
+  const [showWorkspace, setShowWorkspace] = useState(false);
+
+  const handleProceed = () => {
+    setShowWorkspace(true);
+    window.setTimeout(() => {
+      document.getElementById("triage-workspace")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 80);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -258,64 +272,86 @@ export default function HomePage() {
           <img className="brand-logo" src="/api/logo" alt="Project logo" />
           <div>
             <div className="brand-title">Medical Symptom Triage</div>
-            <div className="brand-subtitle">Agentic AI workflow</div>
+            <div className="brand-subtitle">Agentic clinical guidance</div>
           </div>
         </div>
-        <div className="status-pill">Production ready</div>
+        <div className="nav-actions">
+          <a href="#overview">Overview</a>
+          <button type="button" className="access-button" onClick={handleProceed}>
+            Access triage
+          </button>
+        </div>
       </header>
 
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="eyebrow">AI powered triage</div>
-          <h1>Clarity for urgent decisions.</h1>
+      <section className="home-hero" id="overview">
+        <div className="home-copy">
+          <div className="eyebrow">AI powered medical triage</div>
+          <h1>Clear symptom guidance, built with multi-agent reasoning.</h1>
           <p className="lead">
-            Capture symptoms in plain language and receive a triage verdict with
-            specialist reasoning. Built for fast, consistent guidance.
+            A professional decision-support system that routes patient symptoms
+            through specialist agents and returns a structured urgency verdict.
           </p>
-          <div className="hero-metrics">
-            <div className="metric">
-              <span className="metric-label">Agents</span>
-              <span className="metric-value">3 specialists</span>
-            </div>
-            <div className="metric">
-              <span className="metric-label">Patterns</span>
-              <span className="metric-value">ReAct, Tool Use, Chaining</span>
-            </div>
+          <div className="hero-actions">
+            <button type="button" className="primary-cta" onClick={handleProceed}>
+              Proceed to triage
+              <FiArrowRight className="button-icon" />
+            </button>
+            <span className="hero-note">Python backend ready. n8n workflow ready.</span>
           </div>
         </div>
-        <div className="hero-panel">
-          <div className="panel-title">System snapshot</div>
-          <div className="panel-row">
+        <div className="system-panel" aria-label="System architecture summary">
+          <div className="panel-title">System architecture</div>
+          <div className="system-step">
             <div className="panel-icon">
               <FiSearch />
             </div>
             <div>
               <div className="panel-label">Symptom Analyzer</div>
-              <div className="panel-copy">Structured observation and concerns.</div>
+              <div className="panel-copy">ReAct style symptom interpretation.</div>
             </div>
           </div>
-          <div className="panel-row">
+          <div className="system-step">
             <div className="panel-icon">
               <FiShield />
             </div>
             <div>
               <div className="panel-label">Risk Assessor</div>
-              <div className="panel-copy">Red flags and interaction checks.</div>
+              <div className="panel-copy">Tool-based red flag and medication checks.</div>
             </div>
           </div>
-          <div className="panel-row">
+          <div className="system-step">
             <div className="panel-icon">
               <FiClipboard />
             </div>
             <div>
               <div className="panel-label">Care Recommender</div>
-              <div className="panel-copy">Stepwise care plan and monitoring.</div>
+              <div className="panel-copy">Prompt-chained care plan generation.</div>
             </div>
+          </div>
+          <div className="system-verdict">
+            <FiCpu />
+            <span>Orchestrator synthesizes final verdict and specialist outputs.</span>
           </div>
         </div>
       </section>
 
-      <main className="workspace">
+      <section className="feature-strip">
+        <div>
+          <FiActivity />
+          <span>Emergency, doctor visit, or home care verdict</span>
+        </div>
+        <div>
+          <FiLock />
+          <span>Structured REST response for frontend and n8n demos</span>
+        </div>
+        <div>
+          <FiCheckCircle />
+          <span>Transparent specialist reasoning in every result</span>
+        </div>
+      </section>
+
+      {showWorkspace ? (
+      <main className="workspace" id="triage-workspace">
         <form className="form-card" onSubmit={handleSubmit}>
           <h2>Describe the symptoms</h2>
           <p className="muted">
@@ -502,10 +538,14 @@ export default function HomePage() {
           ) : null}
         </section>
       </main>
+      ) : null}
 
       <footer className="footer">
-        Outputs are generated by AI. Always seek licensed medical care for
-        urgent symptoms.
+        <span>
+          Outputs are generated by AI. Always seek licensed medical care for
+          urgent symptoms.
+        </span>
+        <span>Copyright (c) Muhammad Haris Shahzad.</span>
       </footer>
     </>
   );

@@ -1,0 +1,11 @@
+{
+  "name": "medical-symptom-triage-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "postinstall": "npm --prefix frontend install"
+  }
+}
