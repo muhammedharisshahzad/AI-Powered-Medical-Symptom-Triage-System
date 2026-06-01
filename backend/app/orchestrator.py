@@ -98,5 +98,8 @@ class MedicalOrchestrator:
 
 def build_orchestrator() -> MedicalOrchestrator:
     settings = get_settings()
-    client = GroqClient(api_key=settings["groq_api_key"], model=settings["groq_model"])
+    client = GroqClient(
+        api_keys=[settings["groq_api_key"], settings["groq_api_key_backup"]],
+        model=settings["groq_model"],
+    )
     return MedicalOrchestrator(client)
