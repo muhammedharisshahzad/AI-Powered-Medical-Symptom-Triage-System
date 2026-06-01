@@ -21,6 +21,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${plex.variable} ${grotesk.variable}`}>
+      <head>
+        <link rel="preload" as="image" href="/api/logo" />
+      </head>
       <body className="app-body">
         <div className="shell">{children}</div>
       </body>

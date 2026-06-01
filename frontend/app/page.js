@@ -143,6 +143,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [flashEmergency, setFlashEmergency] = useState(false);
   const [showWorkspace, setShowWorkspace] = useState(false);
+  const [logoOpen, setLogoOpen] = useState(false);
 
   const handleProceed = () => {
     setShowWorkspace(true);
@@ -251,6 +252,26 @@ export default function HomePage() {
   const reportSections = result ? parseReport(result.final_report) : [];
 
   useEffect(() => {
+    const img = new Image();
+    img.src = "/api/logo";
+  }, []);
+
+  useEffect(() => {
+    if (!logoOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setLogoOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [logoOpen]);
+
+  useEffect(() => {
     if (!result || result.verdict !== "Emergency") {
       return;
     }
@@ -269,7 +290,24 @@ export default function HomePage() {
       ) : null}
       <header className="header">
         <div className="brand">
-          <img className="brand-logo" src="/api/logo" alt="Project logo" />
+          <button
+            type="button"
+            className="brand-logo-button"
+            onClick={() => setLogoOpen(true)}
+            aria-label="Open logo preview"
+            aria-haspopup="dialog"
+            aria-expanded={logoOpen}
+            aria-controls="logo-dialog"
+          >
+            <img
+              className="brand-logo"
+              src="/api/logo"
+              alt="Project logo"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+            />
+          </button>
           <div>
             <div className="brand-title">Medical Symptom Triage</div>
             <div className="brand-subtitle">Agentic clinical guidance</div>
@@ -282,6 +320,39 @@ export default function HomePage() {
           </button>
         </div>
       </header>
+      {logoOpen ? (
+        <div
+          className="logo-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Project logo"
+          id="logo-dialog"
+          onClick={() => setLogoOpen(false)}
+        >
+          <div
+            className="logo-dialog__panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="logo-dialog__header">
+              <div className="logo-dialog__title">Project logo</div>
+              <button
+                type="button"
+                className="logo-dialog__close"
+                onClick={() => setLogoOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <img
+              className="logo-dialog__image"
+              src="/api/logo"
+              alt="Project logo preview"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+        </div>
+      ) : null}
 
       <section className="home-hero" id="overview">
         <div className="home-copy">
